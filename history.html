@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History Perubahan Stok</title>
+    <link rel="stylesheet" href="styles.css">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyChh_Qnw72udJXcqK1chCjASBm4ayMamuE",
+            authDomain: "data-apd-hync.firebaseapp.com",
+            databaseURL: "https://data-apd-hync-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "data-apd-hync",
+            storageBucket: "data-apd-hync.appspot.com",
+            messagingSenderId: "903552696891",
+            appId: "1:903552696891:web:3dbd1ba665cad5fe1c121e",
+            measurementId: "G-HGLFVBC0YD"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const historyMasukTableBody = document.getElementById("history-masuk-body");
+        const historyKeluarTableBody = document.getElementById("history-keluar-body");
+        const urlParams = new URLSearchParams(window.location.search);
+        const apdId = urlParams.get("id");
+
+        function loadHistory() {
+            const historyRef = ref(db, "APD/" + apdId + "/history");
+            get(historyRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    historyMasukTableBody.innerHTML = "";
+                    historyKeluarTableBody.innerHTML = "";
+                    let adaMasuk = false;
+                    let adaKeluar = false;
+
+                    snapshot.forEach((child) => {
+                        let data = child.val();
+                        let row = document.createElement("tr");
+
+                        let dateCell = document.createElement("td");
+                        dateCell.textContent = data.tanggal;
+                        row.appendChild(dateCell);
+
+                        let amountCell = document.createElement("td");
+                        amountCell.textContent = data.jumlah;
+                        row.appendChild(amountCell);
+
+                        if (data.jenis === "masuk") {
+                            adaMasuk = true;
+                            let typeCell = document.createElement("td");
+                            typeCell.textContent = "Masuk";
+                            row.appendChild(typeCell);
+                            historyMasukTableBody.appendChild(row);
+                        } else if (data.jenis === "keluar") {
+                            adaKeluar = true;
+                            let recipientCell = document.createElement("td");
+                            recipientCell.textContent = data.penerima || "-";
+                            row.appendChild(recipientCell);
+                            historyKeluarTableBody.appendChild(row);
+                        }
+                    });
+
+                    if (!adaMasuk) {
+                        historyMasukTableBody.innerHTML = "<tr><td colspan='3'>Belum ada data</td></tr>";
+                    }
+                    if (!adaKeluar) {
+                        historyKeluarTableBody.innerHTML = "<tr><td colspan='3'>Belum ada data</td></tr>";
+                    }
+                }
+            });
+        }
+
+        window.onload = loadHistory;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>History Perubahan Stok</h1>
+
+        <h2>History Barang Masuk</h2>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Tanggal</th>
+                    <th>Jumlah</th>
+                    <th>Jenis Perubahan</th>
+                </tr>
+            </thead>
+            <tbody id="history-masuk-body">
+                <!-- Data Barang Masuk Akan Muncul di Sini -->
+            </tbody>
+        </table>
+
+        <h2>History Barang Keluar</h2>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Tanggal</th>
+                    <th>Jumlah</th>
+                    <th>Penerima</th>
+                </tr>
+            </thead>
+            <tbody id="history-keluar-body">
+                <!-- Data Barang Keluar Akan Muncul di Sini -->
+            </tbody>
+        </table>
+
+        <button onclick="window.location.href='index.html'">Kembali</button>
+    </div>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tambah APD Baru</title>
+    <link rel="stylesheet" href="styles.css">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { getDatabase, ref, set, update, remove, onValue } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyChh_Qnw72udJXcqK1chCjASBm4ayMamuE",
+            authDomain: "data-apd-hync.firebaseapp.com",
+            databaseURL: "https://data-apd-hync-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "data-apd-hync",
+            storageBucket: "data-apd-hync.appspot.com",
+            messagingSenderId: "903552696891",
+            appId: "1:903552696891:web:3dbd1ba665cad5fe1c121e",
+            measurementId: "G-HGLFVBC0YD"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.onload = function () {
+            const apdList = document.getElementById("apd-list");
+            const apdRef = ref(db, "APD");
+
+            onValue(apdRef, (snapshot) => {
+                apdList.innerHTML = "";
+                let nomorUrut = 1; // Nomor urut dimulai dari 1
+                
+                snapshot.forEach((childSnapshot) => {
+                    const key = childSnapshot.key;
+                    const data = childSnapshot.val();
+                    const row = `<tr>
+                                    <td>${nomorUrut++}</td> <!-- Nomor urut otomatis -->
+                                    <td>${data.nama}</td>
+                                    <td>${data.stok}</td>
+                                    <td>
+                                        <button onclick="editApd('${key}', '${data.nama}', ${data.stok})">Edit</button>
+                                        <button onclick="deleteApd('${key}')">Hapus</button>
+                                    </td>
+                                </tr>`;
+                    apdList.innerHTML += row;
+                });
+            });
+
+            document.getElementById("add-btn").onclick = function () {
+                const nama = document.getElementById("apd-name").value;
+                const stok = parseInt(document.getElementById("apd-stock").value);
+
+                if (nama === "" || isNaN(stok) || stok < 0) {
+                    alert("Harap isi semua data dengan benar!");
+                    return;
+                }
+
+                const newApdRef = ref(db, "APD/" + nama); // Gunakan nama sebagai key unik
+                set(newApdRef, { nama, stok })
+                    .then(() => {
+                        alert("APD berhasil ditambahkan!");
+                        document.getElementById("apd-name").value = "";
+                        document.getElementById("apd-stock").value = "";
+                    })
+                    .catch((error) => alert("Gagal: " + error));
+            };
+
+            document.getElementById("update-btn").onclick = function () {
+                const key = document.getElementById("apd-key").value;
+                const nama = document.getElementById("apd-name").value;
+                const stok = parseInt(document.getElementById("apd-stock").value);
+
+                if (key === "" || nama === "" || isNaN(stok) || stok < 0) {
+                    alert("Harap isi semua data dengan benar!");
+                    return;
+                }
+
+                const updateRef = ref(db, "APD/" + key);
+                update(updateRef, { nama, stok })
+                    .then(() => {
+                        alert("APD berhasil diperbarui!");
+                        document.getElementById("add-btn").style.display = "inline-block";
+                        document.getElementById("update-btn").style.display = "none";
+                        document.getElementById("apd-key").value = "";
+                        document.getElementById("apd-name").value = "";
+                        document.getElementById("apd-stock").value = "";
+                    })
+                    .catch((error) => alert("Gagal: " + error));
+            };
+        };
+
+        // Fungsi Edit APD
+        window.editApd = function (key, nama, stok) {
+            document.getElementById("apd-key").value = key;
+            document.getElementById("apd-name").value = nama;
+            document.getElementById("apd-stock").value = stok;
+            document.getElementById("add-btn").style.display = "none";
+            document.getElementById("update-btn").style.display = "inline-block";
+        };
+
+        // Fungsi Hapus APD
+        window.deleteApd = function (key) {
+            const apdRef = ref(db, "APD/" + key);
+            if (confirm("Apakah Anda yakin ingin menghapus APD ini?")) {
+                remove(apdRef)
+                    .then(() => alert("APD berhasil dihapus!"))
+                    .catch((error) => alert("Gagal: " + error));
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Tambah APD Baru</h1>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Nama APD</th>
+                    <th>Jumlah Stok</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="apd-list"></tbody>
+        </table>
+
+        <input type="hidden" id="apd-key">
+        <input type="text" id="apd-name" placeholder="Nama APD">
+        <input type="number" id="apd-stock" placeholder="Jumlah Stok">
+        <button id="add-btn">Tambah</button>
+        <button id="update-btn" style="display: none;">Update</button>
+        <button onclick="window.location.href='index.html'">Kembali</button>
+    </div>
+</body>
+</html>

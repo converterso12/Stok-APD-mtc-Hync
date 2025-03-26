@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard APD</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyChh_Qnw72udJXcqK1chCjASBm4ayMamuE",
+            authDomain: "data-apd-hync.firebaseapp.com",
+            databaseURL: "https://data-apd-hync-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "data-apd-hync",
+            storageBucket: "data-apd-hync.appspot.com",
+            messagingSenderId: "903552696891",
+            appId: "1:903552696891:web:3dbd1ba665cad5fe1c121e",
+            measurementId: "G-HGLFVBC0YD"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const tableBody = document.getElementById("apd-table-body");
+
+        // Load APD data from Firebase
+        function loadAPD() {
+            get(ref(db, "APD")).then((snapshot) => {
+                if (snapshot.exists()) {
+                    tableBody.innerHTML = "";
+                    let nomorUrut = 1;
+
+                    snapshot.forEach((child) => {
+                        let data = child.val();
+                        let row = document.createElement("tr");
+
+                        let nomorCell = document.createElement("td");
+                        nomorCell.textContent = nomorUrut++;
+                        row.appendChild(nomorCell);
+
+                        let nameCell = document.createElement("td");
+                        nameCell.textContent = data.nama;
+                        row.appendChild(nameCell);
+
+                        let stockCell = document.createElement("td");
+                        stockCell.textContent = data.stok;
+                        row.appendChild(stockCell);
+
+                        let actionCell = document.createElement("td");
+                        let historyButton = document.createElement("button");
+                        historyButton.textContent = "Riwayat";
+                        historyButton.onclick = function () {
+                            window.location.href = "history.html?id=" + child.key;
+                        };
+                        actionCell.appendChild(historyButton);
+                        row.appendChild(actionCell);
+
+                        tableBody.appendChild(row);
+                    });
+                }
+            });
+        }
+
+        window.onload = loadAPD;
+
+        // Fungsi untuk mengekspor tabel ke PDF
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(14);
+            doc.text("Laporan Stok APD Safety Maintenance", 14, 15);
+
+            doc.autoTable({
+                startY: 25,
+                head: [["No", "Nama APD", "Stok"]],
+                body: [...document.querySelectorAll("#apd-table-body tr")].map(row =>
+                    [...row.querySelectorAll("td")].map(td => td.innerText)
+                ),
+                styles: { fontSize: 10 },
+                columnStyles: { 0: { cellWidth: 15 }, 1: { cellWidth: 80 }, 2: { cellWidth: 30 } },
+                margin: { top: 20 }
+            });
+
+            doc.save("Laporan_Stok_APD.pdf");
+        }
+
+        window.exportToPDF = exportToPDF;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Daftar Stok APD Safety Maintenance</h1>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Nama APD</th>
+                    <th>Stok</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="apd-table-body">
+                <!-- Data dari Firebase -->
+            </tbody>
+        </table>
+        <button onclick="window.location.href='tambah-apd.html'">Tambah APD Baru</button>
+        <button onclick="window.location.href='barang-masuk.html'">Barang Masuk</button>
+        <button onclick="window.location.href='barang-keluar.html'">Barang Keluar</button>
+        <button onclick="exportToPDF()">Export ke PDF</button>
+    </div>
+</body>
+</html>

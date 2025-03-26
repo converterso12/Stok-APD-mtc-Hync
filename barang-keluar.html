@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barang Keluar</title>
+    <link rel="stylesheet" href="styles.css">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { getDatabase, ref, get, update, push } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyChh_Qnw72udJXcqK1chCjASBm4ayMamuE",
+            authDomain: "data-apd-hync.firebaseapp.com",
+            databaseURL: "https://data-apd-hync-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "data-apd-hync",
+            storageBucket: "data-apd-hync.appspot.com",
+            messagingSenderId: "903552696891",
+            appId: "1:903552696891:web:3dbd1ba665cad5fe1c121e",
+            measurementId: "G-HGLFVBC0YD"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        function loadAPDList() {
+            const apdSelect = document.getElementById("apd-select");
+            get(ref(db, "APD")).then((snapshot) => {
+                if (snapshot.exists()) {
+                    apdSelect.innerHTML = '<option value="">Pilih APD</option>';
+                    snapshot.forEach((childSnapshot) => {
+                        let data = childSnapshot.val();
+                        let option = document.createElement("option");
+                        option.value = childSnapshot.key;
+                        option.textContent = `${data.nama} (Stok: ${data.stok || 0})`;
+                        apdSelect.appendChild(option);
+                    });
+                }
+            });
+        }
+
+        window.onload = loadAPDList;
+
+        document.getElementById("submit-btn").onclick = function () {
+            const apdKey = document.getElementById("apd-select").value;
+            const jumlahKeluar = parseInt(document.getElementById("jumlah-keluar").value);
+            const penerima = document.getElementById("penerima").value;
+
+            if (!apdKey || isNaN(jumlahKeluar) || jumlahKeluar <= 0 || penerima === "") {
+                alert("Harap isi semua data dengan benar!");
+                return;
+            }
+
+            const apdRef = ref(db, "APD/" + apdKey);
+
+            get(apdRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    let data = snapshot.val();
+                    let stokBaru = (data.stok || 0) - jumlahKeluar;
+
+                    if (stokBaru < 0) {
+                        alert("Stok tidak mencukupi!");
+                        return;
+                    }
+
+                    // Buat key baru untuk history
+                    const historyKey = push(ref(db, `APD/${apdKey}/history`)).key;
+
+                    // Data history dalam format yang diinginkan
+                    const historyData = {
+                        tanggal: new Date().toISOString().split('T')[0], // Format YYYY-MM-DD
+                        jumlah: jumlahKeluar,
+                        jenis: "keluar",
+                        penerima: penerima
+                    };
+
+                    // Update stok + tambah history langsung di dalam APD
+                    const updates = {};
+                    updates[`APD/${apdKey}/stok`] = stokBaru;
+                    updates[`APD/${apdKey}/history/${historyKey}`] = historyData;
+
+                    update(ref(db), updates).then(() => {
+                        alert("Barang keluar berhasil dicatat!");
+                        document.getElementById("jumlah-keluar").value = "";
+                        document.getElementById("penerima").value = "";
+                        loadAPDList(); // Perbarui stok di dropdown
+                    }).catch(error => {
+                        alert("Gagal menyimpan: " + error);
+                    });
+                }
+            });
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Barang Keluar</h1>
+        <label for="apd-select">Pilih APD:</label>
+        <select id="apd-select"></select>
+
+        <label for="jumlah-keluar">Jumlah Keluar:</label>
+        <input type="number" id="jumlah-keluar" placeholder="Masukkan jumlah">
+
+        <label for="penerima">Penerima:</label>
+        <input type="text" id="penerima" placeholder="Masukkan nama penerima">
+
+        <button id="submit-btn">Catat Barang Keluar</button>
+        <button onclick="window.location.href='index.html'">Kembali</button>
+    </div>
+</body>
+</html>
