@@ -39,119 +39,33 @@
                                 <td>${data.nama} (${data.namaMandarin})</td>
                                 <td>${data.stok}</td>
                                 <td>
-                                    <button onclick="editApd('${key}', '${data.nama}', '${data.namaMandarin}', ${data.stok})">Edit</button>
+                                    <button onclick="editApd('${key}', '${data.nama}', '${data.namaMandarin}', ${data.stok}')">Edit</button>
                                     <button onclick="deleteApd('${key}')">Hapus</button>
                                 </td>
                             </tr>`;
                 apdList.innerHTML += row;
             });
         });
-
-        document.getElementById("add-btn").onclick = async function () {
-            const nama = document.getElementById("apd-name").value;
-            const stok = parseInt(document.getElementById("apd-stock").value);
-
-            if (nama === "" || isNaN(stok) || stok < 0) {
-                alert("Harap isi semua data dengan benar!");
-                return;
-            }
-
-            try {
-                const namaMandarin = await translateToChinese(nama);
-                const newApdRef = ref(db, "APD/" + nama);
-
-                set(newApdRef, { nama, namaMandarin, stok })
-                    .then(() => {
-                        alert(`APD "${nama}" (${namaMandarin}) berhasil ditambahkan!`);
-                        document.getElementById("apd-name").value = "";
-                        document.getElementById("apd-stock").value = "";
-                    })
-                    .catch((error) => alert("Gagal: " + error));
-            } catch (error) {
-                alert("Terjadi kesalahan saat menerjemahkan!");
-            }
-        };
-
-        document.getElementById("update-btn").onclick = async function () {
-            const key = document.getElementById("apd-key").value;
-            const nama = document.getElementById("apd-name").value;
-            const stok = parseInt(document.getElementById("apd-stock").value);
-
-            if (key === "" || nama === "" || isNaN(stok) || stok < 0) {
-                alert("Harap isi semua data dengan benar!");
-                return;
-            }
-
-            try {
-                const namaMandarin = await translateToChinese(nama);
-                const updateRef = ref(db, "APD/" + key);
-
-                update(updateRef, { nama, namaMandarin, stok })
-                    .then(() => {
-                        alert(`APD "${nama}" (${namaMandarin}) berhasil diperbarui!`);
-                        document.getElementById("add-btn").style.display = "inline-block";
-                        document.getElementById("update-btn").style.display = "none";
-                        document.getElementById("apd-key").value = "";
-                        document.getElementById("apd-name").value = "";
-                        document.getElementById("apd-stock").value = "";
-                    })
-                    .catch((error) => alert("Gagal: " + error));
-            } catch (error) {
-                alert("Terjadi kesalahan saat menerjemahkan!");
-            }
-        };
     };
-
-    async function translateToChinese(text) {
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=id&tl=zh-CN&dt=t&q=${encodeURIComponent(text)}`;
-
-        try {
-            const response = await fetch(url);
-            const data = await response.json();
-            return data[0][0][0]; 
-        } catch (error) {
-            console.error("Error translating:", error);
-            return "Terjemahan Gagal";
-        }
-    }
-
-    window.editApd = function (key, nama, namaMandarin, stok) {
-        document.getElementById("apd-key").value = key;
-        document.getElementById("apd-name").value = nama;
-        document.getElementById("apd-stock").value = stok;
-        document.getElementById("add-btn").style.display = "none";
-        document.getElementById("update-btn").style.display = "inline-block";
-    };
-
-    window.deleteApd = function (key) {
-        const apdRef = ref(db, "APD/" + key);
-        if (confirm("Apakah Anda yakin ingin menghapus APD ini?")) {
-            remove(apdRef)
-                .then(() => alert("APD berhasil dihapus!"))
-                .catch((error) => alert("Gagal: " + error));
-        }
-    };
-</script>
+    </script>
 </head>
 <body>
     <div class="container">
-        <h1>Tambah APD Baru</h1>
-        <table border="1"><script>
-        function cekKode(url) {
-            let kode = prompt("Masukkan kode akses:");
-            if (kode === "00") {
-                window.location.href = url;
-            } else {
-                alert("Kode salah! Akses ditolak.");
-            }
-        }
-    </script>
+        <h1 id="title">Tambah APD Baru</h1>
+
+        <label for="language-select">Pilih Bahasa:</label>
+        <select id="language-select" onchange="changeLanguage()">
+            <option value="id">Bahasa Indonesia</option>
+            <option value="zh">中文</option>
+        </select>
+
+        <table border="1">
             <thead>
                 <tr>
-                    <th>No</th>
-                    <th>Nama APD</th>
-                    <th>Jumlah Stok</th>
-                    <th>Aksi</th>
+                    <th id="header-no">No</th>
+                    <th id="header-nama">Nama APD</th>
+                    <th id="header-stok">Jumlah Stok</th>
+                    <th id="header-aksi">Aksi</th>
                 </tr>
             </thead>
             <tbody id="apd-list"></tbody>
@@ -162,7 +76,50 @@
         <input type="number" id="apd-stock" placeholder="Jumlah Stok">
         <button id="add-btn">Tambah</button>
         <button id="update-btn" style="display: none;">Update</button>
-        <button onclick="window.location.href='index.html'">Kembali</button>
+        <button id="back-btn" onclick="window.location.href='index.html'">Kembali</button>
     </div>
+
+    <script>
+    function changeLanguage() {
+        const lang = document.getElementById("language-select").value;
+        document.getElementById("title").textContent = translations[lang].title;
+        document.getElementById("add-btn").textContent = translations[lang].add;
+        document.getElementById("update-btn").textContent = translations[lang].update;
+        document.getElementById("back-btn").textContent = translations[lang].back;
+
+        // Header tabel
+        document.getElementById("header-no").textContent = translations[lang].no;
+        document.getElementById("header-nama").textContent = translations[lang].name;
+        document.getElementById("header-stok").textContent = translations[lang].stock;
+        document.getElementById("header-aksi").textContent = translations[lang].action;
+
+        // Placeholder input
+        document.getElementById("apd-name").placeholder = translations[lang].name;
+        document.getElementById("apd-stock").placeholder = translations[lang].stock;
+    }
+
+    const translations = {
+        "id": {
+            "title": "Tambah APD Baru",
+            "add": "Tambah",
+            "update": "Update",
+            "back": "Kembali",
+            "no": "No",
+            "name": "Nama APD",
+            "stock": "Jumlah Stok",
+            "action": "Aksi"
+        },
+        "zh": {
+            "title": "添加新APD",
+            "add": "添加",
+            "update": "更新",
+            "back": "返回",
+            "no": "编号",
+            "name": "APD名称",
+            "stock": "库存数量",
+            "action": "操作"
+        }
+    };
+    </script>
 </body>
 </html>

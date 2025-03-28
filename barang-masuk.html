@@ -24,15 +24,17 @@
         const db = getDatabase(app);
         const apdSelect = document.getElementById("apd-select");
 
+        let currentLang = "id"; // Default Bahasa Indonesia
+
         function loadAPD() {
             get(ref(db, "APD")).then((snapshot) => {
                 if (snapshot.exists()) {
-                    apdSelect.innerHTML = "<option value=''>Pilih APD</option>";
+                    apdSelect.innerHTML = `<option value="">${translations[currentLang].selectAPD}</option>`;
                     snapshot.forEach((child) => {
                         let data = child.val();
                         let option = document.createElement("option");
                         option.value = child.key;
-                        option.textContent = data.nama;
+                        option.textContent = `${data.nama} (${data.namaMandarin})`;
                         apdSelect.appendChild(option);
                     });
                 }
@@ -44,7 +46,7 @@
             const tambahan = parseInt(document.getElementById("jumlah").value);
 
             if (apdKey === "" || isNaN(tambahan) || tambahan <= 0) {
-                alert("Harap pilih APD dan masukkan jumlah yang valid!");
+                alert(translations[currentLang].alertInvalid);
                 return;
             }
 
@@ -57,9 +59,14 @@
                     // Buat key baru untuk history
                     const historyKey = push(ref(db, `APD/${apdKey}/history`)).key;
 
-                    // Data history dalam format yang diinginkan
+                    // Format tanggal sesuai bahasa
+                    const tanggal = new Date();
+                    const tanggalFormatted = currentLang === "id"
+                        ? tanggal.toISOString().split('T')[0]  // Format YYYY-MM-DD
+                        : `${tanggal.getFullYear()}年${tanggal.getMonth() + 1}月${tanggal.getDate()}日`;  // Format Mandarin
+
                     const historyData = {
-                        tanggal: new Date().toISOString().split('T')[0], // Format YYYY-MM-DD
+                        tanggal: tanggalFormatted,
                         jumlah: tambahan,
                         jenis: "masuk"
                     };
@@ -70,25 +77,67 @@
                     updates[`APD/${apdKey}/history/${historyKey}`] = historyData;
 
                     update(ref(db), updates).then(() => {
-                        alert("Stok berhasil ditambahkan!");
+                        alert(translations[currentLang].alertSuccess);
                         document.getElementById("jumlah").value = "";
                     }).catch(error => {
-                        alert("Gagal menyimpan: " + error);
+                        alert(translations[currentLang].alertError + error);
                     });
                 }
             });
         };
 
+        window.changeLanguage = function () {
+            currentLang = document.getElementById("language-select").value;
+
+            document.getElementById("title").textContent = translations[currentLang].title;
+            document.getElementById("jumlah").placeholder = translations[currentLang].placeholder;
+            document.getElementById("add-btn").textContent = translations[currentLang].add;
+            document.getElementById("back-btn").textContent = translations[currentLang].back;
+
+            // Refresh dropdown APD agar nama berubah sesuai bahasa
+            loadAPD();
+        };
+
         window.onload = loadAPD;
+
+        const translations = {
+            "id": {
+                "title": "Barang Masuk - Tambah Stok",
+                "selectAPD": "Pilih APD",
+                "placeholder": "Jumlah Tambah",
+                "add": "Tambah Stok",
+                "back": "Kembali",
+                "alertInvalid": "Harap pilih APD dan masukkan jumlah yang valid!",
+                "alertSuccess": "Stok berhasil ditambahkan!",
+                "alertError": "Gagal menyimpan: "
+            },
+            "zh": {
+                "title": "物品入库 - 增加库存",
+                "selectAPD": "选择APD",
+                "placeholder": "添加数量",
+                "add": "增加库存",
+                "back": "返回",
+                "alertInvalid": "请选择APD并输入有效数量！",
+                "alertSuccess": "库存已成功增加！",
+                "alertError": "保存失败: "
+            }
+        };
     </script>
 </head>
 <body>
     <div class="container">
-        <h1>Barang Masuk - Tambah Stok</h1>
+        <h1 id="title">Barang Masuk - Tambah Stok</h1>
+
+        <label for="language-select">Pilih Bahasa:</label>
+        <select id="language-select" onchange="changeLanguage()">
+            <option value="id">Bahasa Indonesia</option>
+            <option value="zh">中文</option>
+        </select>
+
         <select id="apd-select"></select>
         <input type="number" id="jumlah" placeholder="Jumlah Tambah">
-        <button onclick="tambahStok()">Tambah Stok</button>
-        <button onclick="window.location.href='index.html'">Kembali</button>
+        <button id="add-btn" onclick="tambahStok()">Tambah Stok</button>
+        <button id="back-btn" onclick="window.location.href='index.html'">Kembali</button>
     </div>
 </body>
 </html>

@@ -22,12 +22,14 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        const historyMasukTableBody = document.getElementById("history-masuk-body");
-        const historyKeluarTableBody = document.getElementById("history-keluar-body");
-        const urlParams = new URLSearchParams(window.location.search);
-        const apdId = urlParams.get("id");
+        let language = "id"; // Default Bahasa Indonesia
 
         function loadHistory() {
+            const historyMasukTableBody = document.getElementById("history-masuk-body");
+            const historyKeluarTableBody = document.getElementById("history-keluar-body");
+            const urlParams = new URLSearchParams(window.location.search);
+            const apdId = urlParams.get("id");
+
             const historyRef = ref(db, "APD/" + apdId + "/history");
             get(historyRef).then((snapshot) => {
                 if (snapshot.exists()) {
@@ -51,7 +53,7 @@
                         if (data.jenis === "masuk") {
                             adaMasuk = true;
                             let typeCell = document.createElement("td");
-                            typeCell.textContent = "Masuk";
+                            typeCell.textContent = language === "id" ? "Masuk" : "入库";
                             row.appendChild(typeCell);
                             historyMasukTableBody.appendChild(row);
                         } else if (data.jenis === "keluar") {
@@ -64,25 +66,61 @@
                     });
 
                     if (!adaMasuk) {
-                        historyMasukTableBody.innerHTML = "<tr><td colspan='3'>Belum ada data</td></tr>";
+                        historyMasukTableBody.innerHTML = `<tr><td colspan='3'>${language === "id" ? "Belum ada data" : "暂无数据"}</td></tr>`;
                     }
                     if (!adaKeluar) {
-                        historyKeluarTableBody.innerHTML = "<tr><td colspan='3'>Belum ada data</td></tr>";
+                        historyKeluarTableBody.innerHTML = `<tr><td colspan='3'>${language === "id" ? "Belum ada data" : "暂无数据"}</td></tr>`;
                     }
                 }
             });
         }
 
-        window.onload = loadHistory;
+        function changeLanguage(lang) {
+            language = lang;
+
+            document.getElementById("title").textContent = lang === "id" ? "History Perubahan Stok" : "库存变更记录";
+            document.getElementById("label-masuk").textContent = lang === "id" ? "History Barang Masuk" : "入库记录";
+            document.getElementById("label-keluar").textContent = lang === "id" ? "History Barang Keluar" : "出库记录";
+            document.getElementById("btn-back").textContent = lang === "id" ? "Kembali" : "返回";
+
+            document.getElementById("table-masuk-header").innerHTML = `
+                <tr>
+                    <th>${lang === "id" ? "Tanggal" : "日期"}</th>
+                    <th>${lang === "id" ? "Jumlah" : "数量"}</th>
+                    <th>${lang === "id" ? "Jenis Perubahan" : "变更类型"}</th>
+                </tr>`;
+
+            document.getElementById("table-keluar-header").innerHTML = `
+                <tr>
+                    <th>${lang === "id" ? "Tanggal" : "日期"}</th>
+                    <th>${lang === "id" ? "Jumlah" : "数量"}</th>
+                    <th>${lang === "id" ? "Penerima" : "接收人"}</th>
+                </tr>`;
+
+            loadHistory(); // Refresh data dengan teks terbaru
+        }
+
+        window.onload = function() {
+            loadHistory();
+            document.getElementById("language-select").addEventListener("change", function() {
+                changeLanguage(this.value);
+            });
+        };
     </script>
 </head>
 <body>
     <div class="container">
-        <h1>History Perubahan Stok</h1>
+        <h1 id="title">History Perubahan Stok</h1>
 
-        <h2>History Barang Masuk</h2>
+        <label for="language-select">Pilih Bahasa:</label>
+        <select id="language-select">
+            <option value="id">🇮🇩 Indonesia</option>
+            <option value="cn">🇨🇳 中文</option>
+        </select>
+
+        <h2 id="label-masuk">History Barang Masuk</h2>
         <table border="1">
-            <thead>
+            <thead id="table-masuk-header">
                 <tr>
                     <th>Tanggal</th>
                     <th>Jumlah</th>
@@ -94,9 +132,9 @@
             </tbody>
         </table>
 
-        <h2>History Barang Keluar</h2>
+        <h2 id="label-keluar">History Barang Keluar</h2>
         <table border="1">
-            <thead>
+            <thead id="table-keluar-header">
                 <tr>
                     <th>Tanggal</th>
                     <th>Jumlah</th>
@@ -108,7 +146,7 @@
             </tbody>
         </table>
 
-        <button onclick="window.location.href='index.html'">Kembali</button>
+        <button id="btn-back" onclick="window.location.href='index.html'">Kembali</button>
     </div>
 </body>
 </html>

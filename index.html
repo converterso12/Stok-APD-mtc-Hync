@@ -25,7 +25,6 @@
         const db = getDatabase(app);
         const tableBody = document.getElementById("apd-table-body");
 
-        // Load APD data from Firebase
         function loadAPD() {
             get(ref(db, "APD")).then((snapshot) => {
                 if (snapshot.exists()) {
@@ -64,109 +63,109 @@
         }
 
         window.onload = loadAPD;
-        
 
-      function exportToExcel() {
-    let tableBody = document.getElementById("apd-table-body");
-    if (!tableBody) {
-        alert("Data tabel tidak ditemukan!");
-        return;
-    }
+        function exportToExcel() {
+            let tableBody = document.getElementById("apd-table-body");
+            if (!tableBody) {
+                alert("Data tabel tidak ditemukan!");
+                return;
+            }
 
-    let data = [];
+            let data = [];
+            let header = ["No", "Nama APD", "Stok"];
+            data.push(header);
 
-    // Tambahkan header dengan styling
-    let header = ["No", "Nama APD", "Stok"];
-    data.push(header);
+            let rows = tableBody.getElementsByTagName("tr");
+            if (rows.length === 0) {
+                alert("Tidak ada data untuk diekspor!");
+                return;
+            }
 
-    let rows = tableBody.getElementsByTagName("tr");
-    if (rows.length === 0) {
-        alert("Tidak ada data untuk diekspor!");
-        return;
-    }
+            for (let i = 0; i < rows.length; i++) {
+                let cells = rows[i].getElementsByTagName("td");
+                if (cells.length >= 3) {
+                    data.push([
+                        cells[0].innerText, 
+                        cells[1].innerText, 
+                        cells[2].innerText  
+                    ]);
+                }
+            }
 
-    // Ambil data dari tabel
-    for (let i = 0; i < rows.length; i++) {
-        let cells = rows[i].getElementsByTagName("td");
-        if (cells.length >= 3) {
-            data.push([
-                cells[0].innerText, // No
-                cells[1].innerText, // Nama APD + Mandarin
-                cells[2].innerText  // Stok
-            ]);
+            let ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [
+                { wch: 5 },  
+                { wch: 30 },  
+                { wch: 10 }   
+            ];
+
+            let wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Laporan Stok APD");
+            XLSX.writeFile(wb, "Laporan_Stok_APD.xlsx");
         }
-    }
 
-    let ws = XLSX.utils.aoa_to_sheet(data);
+        window.exportToExcel = exportToExcel;
+    </script>
 
-    // Atur lebar kolom otomatis
-    ws['!cols'] = [
-        { wch: 5 },   // Kolom "No"
-        { wch: 30 },   // Kolom "Nama APD"
-        { wch: 10 }    // Kolom "Stok"
-    ];
+    <script>
+        function ubahBahasa() {
+            let bahasa = document.getElementById("select-language").value;
+            const elemenHeader = document.querySelectorAll(".header-text");
+            const elemenTombol = document.querySelectorAll(".button-text");
 
-    // Terapkan wrap text pada Nama APD
-    for (let i = 1; i <= rows.length; i++) {
-        ws[`B${i + 1}`].s = { alignment: { wrapText: true } };
-    }
+            if (bahasa === "zh") {
+                elemenHeader[0].innerText = "编号"; // No
+                elemenHeader[1].innerText = "防护设备名称"; // Nama APD
+                elemenHeader[2].innerText = "库存"; // Stok
+                elemenHeader[3].innerText = "历史记录"; // Histori
 
-    // Tambahkan warna pada header
-    let headerStyle = {
-        font: { bold: true, color: { rgb: "FFFFFF" } },
-        fill: { fgColor: { rgb: "4F81BD" } }, // Warna biru tua
-        alignment: { horizontal: "center" }
-    };
+                elemenTombol[0].innerText = "添加新的防护设备"; // Tambah APD Baru
+                elemenTombol[1].innerText = "货物入库"; // Barang Masuk
+                elemenTombol[2].innerText = "货物出库"; // Barang Keluar
+                elemenTombol[3].innerText = "导出到Excel"; // Export ke Excel
+            } else {
+                elemenHeader[0].innerText = "No";
+                elemenHeader[1].innerText = "Nama APD";
+                elemenHeader[2].innerText = "Stok";
+                elemenHeader[3].innerText = "Histori";
 
-    let range = XLSX.utils.decode_range(ws["!ref"]);
-    for (let C = range.s.c; C <= range.e.c; C++) {
-        let cell = XLSX.utils.encode_cell({ r: 0, c: C });
-        ws[cell].s = headerStyle;
-    }
-
-    let wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Laporan Stok APD");
-
-    // Simpan sebagai file Excel
-    XLSX.writeFile(wb, "Laporan_Stok_APD.xlsx");
-}
-
-window.exportToExcel = exportToExcel;
+                elemenTombol[0].innerText = "Tambah APD Baru";
+                elemenTombol[1].innerText = "Barang Masuk";
+                elemenTombol[2].innerText = "Barang Keluar";
+                elemenTombol[3].innerText = "Export ke Excel";
+            }
+        }
     </script>
 </head>
 <body>
     <div class="container">
-        <h1>Daftar APD MTC (个人防护装备清单)</h1>
+        <h1>Daftar APD Keselamatan Kerja MTC</h1>
+
+        <!-- Dropdown Pilihan Bahasa -->
+        <label for="select-language">Pilih Bahasa (选择语言) :</label>
+        <select id="select-language" onchange="ubahBahasa()">
+            <option value="id">Bahasa Indonesia</option>
+            <option value="zh">中文 (Mandarin)</option>
+        </select>
+
         <table border="1">
             <thead>
                 <tr>
-                    <th>No</th>
-                    <th>Nama APD (个人防护装备名称)</th>
-                    <th>Stok (库存)</th>
-                    <th>Histori (历史)</th>
+                    <th class="header-text">No</th>
+                    <th class="header-text">Nama APD</th>
+                    <th class="header-text">Stok</th>
+                    <th class="header-text">Histori</th>
                 </tr>
             </thead>
             <tbody id="apd-table-body">
                 <!-- Data dari Firebase -->
             </tbody>
         </table>
-        
-   <button class="tambah" onclick="cekKode('tambah-apd.html')">Tambah APD</button>
-<button class="masuk" onclick="cekKode('barang-masuk.html')">Barang Masuk</button>
-<button class="keluar" onclick="cekKode('barang-keluar.html')">Barang Keluar</button>
 
-<script>
-        function cekKode(url) {
-            let kode = prompt("Masukkan kode akses:");
-            if (kode === "00") {
-                window.location.href = url;
-            } else {
-                alert("Kode salah! Akses ditolak.");
-            }
-        }
-    </script>
-
-    <button class="export" onclick="exportToExcel()">Export ke Excel</button>
+        <button class="tambah button-text" onclick="window.location.href='tambah-apd.html'">Tambah APD Baru</button>
+        <button class="masuk button-text" onclick="window.location.href='barang-masuk.html'">Barang Masuk</button>
+        <button class="keluar button-text" onclick="window.location.href='barang-keluar.html'">Barang Keluar</button>
+        <button class="export button-text" onclick="exportToExcel()">Export ke Excel</button>
     </div>
 </body>
 </html>
