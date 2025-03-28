@@ -123,7 +123,7 @@ input {
 @media (max-width: 600px) {
     .container {
         width: 95%;
-        padding: 15px;
+        padding: 10px;
     }
 
     table {
@@ -135,7 +135,12 @@ input {
     }
 
     button {
-        width: 80%;
+        width: 85%;
         margin-bottom: 10px; /* Tambah spasi antar tombol dalam mode vertikal */
     }
+    
+        .tambah { background-color: #28a745; } /* Hijau */
+        .masuk { background-color: #7C00FF; } /* Biru */
+        .keluar { background-color: #ffc107; color: black; } /* Kuning */
+        .export { background-color: #dc3545; } /* Merah */
 }
